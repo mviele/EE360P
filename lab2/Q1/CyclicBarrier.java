@@ -6,13 +6,21 @@
  * 
  */
 import java.util.concurrent.Semaphore; // for implementation using Semaphores
+import java.util.ArrayList;
+import java.util.List;
 
 public class CyclicBarrier {
 	
 	private int parties;	
+	private List<Semaphore>	semaphoreList;
 
 	public CyclicBarrier(int parties) {
 		this.parties = parties; //Maybe?
+		this.semaphoreList = new ArrayList<>();
+		for(int i = 0; i < parties; i++){
+			Semaphore s = new Semaphore(1); //Binary Semaphore
+			this.semaphoreList.add(s);
+		}
 	}
 	
 	// Waits until all parties have invoked await on this barrier.
@@ -23,9 +31,8 @@ public class CyclicBarrier {
 	// (parties - 1) indicates the first to arrive and zero indicates
 	// the last to arrive.
 	public int await() throws InterruptedException {
-           int index = 0;
+		int index = 0;
 		
-          // you need to write this code
-	    return index;
+		return index;
 	}
 }
