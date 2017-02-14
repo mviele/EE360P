@@ -11,14 +11,22 @@ import java.util.List;
 
 public class CyclicBarrier {
 	
-	private int parties;	
-	private List<Semaphore>	semaphoreList;
+	private int parties;
+	private int index;	
+	private List<Semaphore> semaphoreList;
 
 	public CyclicBarrier(int parties) {
 		this.parties = parties; //Maybe?
+		this.index = parties - 1;
 		this.semaphoreList = new ArrayList<>();
 		for(int i = 0; i < parties; i++){
 			Semaphore s = new Semaphore(1); //Binary Semaphore
+			try{
+				s.acquire();
+			}
+			catch(Exception e){
+				e.printStackTrace();
+			}
 			this.semaphoreList.add(s);
 		}
 	}
@@ -31,8 +39,18 @@ public class CyclicBarrier {
 	// (parties - 1) indicates the first to arrive and zero indicates
 	// the last to arrive.
 	public int await() throws InterruptedException {
-		int index = 0;
-		
-		return index;
+		int threadIndex = this.index--;
+		this.acquire(threadIndex);
+		this.semaphoreList.get(threadIndex).release();
+		return threadIndex;
+	}
+
+	private void acquire(int threadIndex) throws InterruptedException {
+		if(this.index < 0){
+			for(Semaphore s: this.semaphoreList){
+				s.release();
+			}
+		}
+		this.semaphoreList.get(threadIndex).acquire();
 	}
 }

@@ -5,18 +5,27 @@
  * rl26589
  * 
  */
-import java.util.concurrent.Semaphore; // for implementation using Semaphores
 
-public class MonitorCyclicBarrier extends CyclicBarrier {
+public class MonitorCyclicBarrier {
+
+	private int parties;
+	private int index;
 	
 	public MonitorCyclicBarrier(int parties) {
+		this.parties = parties;
+		this.index = parties - 1;
 	}
 	
-	@Override
 	public int await() throws InterruptedException {
-           int index = 0;
+		int threadIndex;
+		synchronized(this){
+			threadIndex = index--;
+		}
+
+		while(index >= 0){
+			Thread.sleep(1000);
+		}
 		
-          // you need to write this code
-	    return index;
+	    return threadIndex;
 	}
 }
