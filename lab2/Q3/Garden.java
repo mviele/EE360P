@@ -1,9 +1,7 @@
 /* EE 360P, HW2, #3
  * Created (February 12, 2017) by Royce Li, Matthew Viele, and Robbie Zuazua
- * Last edited: February 12, 2017 
+ * Last edited: February 14, 2017 
  * */
-
-package garden;
 
 /*    Newton: Digs
  *    Benjamin: Seeds
@@ -34,21 +32,22 @@ public class Garden {
 	final Condition waitToDig, waitToSeed, waitToFill;
 	
 	public Garden() { 
-		garden = new ReentrantLock();
-		shovel = new AtomicInteger(); 
-		unfilled = new AtomicInteger();
-		unseeded = new AtomicInteger();
-		seeded = new AtomicInteger();
-		filled = new AtomicInteger();
-		dug = new AtomicInteger();
-		waitToDig = garden.newCondition();
-		waitToSeed = garden.newCondition();
-		waitToFill = garden.newCondition();
+		this.garden = new ReentrantLock();
+		this.shovel = new AtomicInteger(); // 1: in use 0: not in use
+		this.unfilled = new AtomicInteger();
+		this.unseeded = new AtomicInteger();
+		this.seeded = new AtomicInteger();
+		this.filled = new AtomicInteger();
+		this.dug = new AtomicInteger();
+		this.waitToDig = garden.newCondition();
+		this.waitToSeed = garden.newCondition();
+		this.waitToFill = garden.newCondition();
 	}; 
 	public void startDigging() { // Newton
 		garden.lock();
 		try{
-			while((unseeded.get() >=4) || (unfilled.get() + unseeded.get() >= 8) || (shovel.get() != 0)){
+			while((unseeded.get() >=4) || (unfilled.get() + unseeded.get() >= 8) 
+			|| (shovel.get() == 1)){
 				waitToDig.await();
 			}
 			shovel.incrementAndGet();
@@ -65,7 +64,7 @@ public class Garden {
 			shovel.decrementAndGet(); 
 			dug.incrementAndGet(); // keep count of Newton's holes
 			unseeded.incrementAndGet(); // keep count of unseeded holes for Ben
-			waitToDig.signal();
+			waitToSeed.signal();
 		}
 		finally{
 			garden.unlock();
@@ -91,7 +90,8 @@ public class Garden {
 			seeded.incrementAndGet(); // keep count of Ben's seed count
 			unseeded.decrementAndGet(); 
 			unfilled.incrementAndGet(); // keep count of unfilled for Mary
-			waitToSeed.signal();
+			waitToDig.signal();
+			waitToFill.signal();
 		}
 		finally{
 			garden.unlock();
@@ -100,7 +100,7 @@ public class Garden {
 	public void startFilling() { // Mary
 		garden.lock();
 		try{
-			while(unfilled.get() < 1){
+			while(unfilled.get() < 1 || (shovel.get() == 1)){
 				waitToFill.await();
 			}
 			shovel.incrementAndGet();
@@ -117,7 +117,7 @@ public class Garden {
 			shovel.decrementAndGet();
 			filled.incrementAndGet(); // Keep count of mary's filled
 			unfilled.decrementAndGet();
-			waitToFill.signal();
+			waitToDig.signal();
 		}finally{
 			garden.unlock();
 		}
