@@ -7,6 +7,7 @@ public class FairReadWriteLock {
 	private int numThreads;
 	private int line;
 	
+	//Constructor
 	public FairReadWriteLock(){
 		this.numReaders = 0;
 		this.numWriters = 0;
@@ -15,34 +16,41 @@ public class FairReadWriteLock {
 	}
 	
 	public synchronized void beginRead() {
+		
+		//assign a ProcessId and then increment count
 		int myNumInLine = this.numThreads;
 		this.numThreads++;
 		
+		//Wait until there are no writers and its your turn in line
 		while(this.numWriters>0 || this.line<myNumInLine){
 			try{
 				wait();
 			}
 			catch(Exception e){
-				System.out.println("Error thrown in beginRead Function");
-				e.printStackTrace();
+				System.out.println(e);
 			}
 		}
 		
+		//Update globals and notify
 		this.line++;
 		this.numReaders++;
 		notifyAll();
 	}
 	
 	public synchronized void endRead() {
+		//One reader left, so notify everyone
 		this.numReaders --;
 		notifyAll();
 		
 	}
 	
 	public synchronized void beginWrite() {
+		
+		//assign a ProcessId and then increment count
 		int myNumInLine = this.numThreads;
 		this.numThreads++;
 		
+		//Wait until there are no writers or readers and its your turn in line
 		while(this.numReaders>0 || this.numWriters>0 || this.line<myNumInLine){
 			try{
 				wait();
@@ -52,6 +60,7 @@ public class FairReadWriteLock {
 			}
 		}
 		
+		//Update globals and notify
 		this.line++;
 		this.numWriters++;
 		notifyAll();
@@ -59,6 +68,7 @@ public class FairReadWriteLock {
 	
 	
 	public synchronized void endWrite() {
+		//One writer left, so notify everyone
 		this.numWriters--;
 		notifyAll();
 	}
