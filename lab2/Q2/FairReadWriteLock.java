@@ -8,17 +8,17 @@ public class FairReadWriteLock {
 	private int line;
 	
 	public FairReadWriteLock(){
-		numReaders = 0;
-		numWriters = 0;
-		numThreads = 0;
-		line = 0;
+		this.numReaders = 0;
+		this.numWriters = 0;
+		this.numThreads = 0;
+		this.line = 0;
 	}
 	
 	public synchronized void beginRead() {
-		int myNumInLine = numThreads;
-		numThreads++;
+		int myNumInLine = this.numThreads;
+		this.numThreads++;
 		
-		while(numWriters>0 || line<myNumInLine){
+		while(this.numWriters>0 || this.line<myNumInLine){
 			try{
 				wait();
 			}
@@ -28,22 +28,22 @@ public class FairReadWriteLock {
 			}
 		}
 		
-		line++;
-		numReaders++;
+		this.line++;
+		this.numReaders++;
 		notifyAll();
 	}
 	
 	public synchronized void endRead() {
-		numReaders --;
+		this.numReaders --;
 		notifyAll();
 		
 	}
 	
 	public synchronized void beginWrite() {
-		int myNumInLine = numThreads;
-		numThreads++;
+		int myNumInLine = this.numThreads;
+		this.numThreads++;
 		
-		while(numReaders>0 || numWriters>0 || line<myNumInLine){
+		while(this.numReaders>0 || this.numWriters>0 || this.line<myNumInLine){
 			try{
 				wait();
 			}
@@ -52,14 +52,14 @@ public class FairReadWriteLock {
 			}
 		}
 		
-		line++;
-		numWriters++;
+		this.line++;
+		this.numWriters++;
 		notifyAll();
 	}
 	
 	
 	public synchronized void endWrite() {
-		numWriters--;
+		this.numWriters--;
 		notifyAll();
 	}
 }
