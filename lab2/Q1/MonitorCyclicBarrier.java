@@ -20,12 +20,19 @@ public class MonitorCyclicBarrier {
 		int threadIndex;
 		synchronized(this){
 			threadIndex = index--;
-		}
 
-		while(index >= 0){
-			Thread.sleep(1000);
+			if(index >= 0){
+				this.wait();
+			}
+		
+			this.notify();
 		}
 		
+		if(this.index < this.parties - 1){
+			synchronized(this){
+				this.index = parties - 1;
+			}	
+		}
 	    return threadIndex;
 	}
 }

@@ -19,7 +19,7 @@ public class CyclicBarrier {
 		this.parties = parties; //Maybe?
 		this.index = parties - 1;
 		this.semaphoreList = new ArrayList<>();
-		for(int i = 0; i < parties; i++){
+		for(int i = 0; i < this.parties; i++){
 			Semaphore s = new Semaphore(1); //Binary Semaphore
 			try{
 				s.acquire();
@@ -50,7 +50,20 @@ public class CyclicBarrier {
 			for(Semaphore s: this.semaphoreList){
 				s.release();
 			}
+			this.index = this.parties - 1;
+			this.reset();
 		}
 		this.semaphoreList.get(threadIndex).acquire();
+	}
+
+	private void reset(){
+		for(Semaphore s: semaphoreList){
+			try{
+				s.acquire();
+			}
+			catch(Exception e){
+				e.printStackTrace();
+			}
+		}
 	}
 }
