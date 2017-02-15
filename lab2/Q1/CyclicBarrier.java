@@ -41,7 +41,6 @@ public class CyclicBarrier {
 	public int await() throws InterruptedException {
 		int threadIndex = this.index--;
 		this.acquire(threadIndex);
-		//this.semaphoreList.get(threadIndex).release();
 		return threadIndex;
 	}
 
@@ -51,19 +50,7 @@ public class CyclicBarrier {
 				s.release();
 			}
 			this.index = this.parties - 1;
-			//this.reset();
 		}
 		this.semaphoreList.get(threadIndex).acquire();
-	}
-
-	private void reset(){
-		for(Semaphore s: semaphoreList){
-			try{
-				s.acquire();
-			}
-			catch(Exception e){
-				e.printStackTrace();
-			}
-		}
 	}
 }
