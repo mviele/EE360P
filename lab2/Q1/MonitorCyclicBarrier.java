@@ -19,18 +19,19 @@ public class MonitorCyclicBarrier {
 	public int await() throws InterruptedException {
 		int threadIndex;
 		synchronized(this){
-			threadIndex = index--;
+			threadIndex = this.index--;
 
 			if(index >= 0){
 				this.wait();
 			}
-		
-			this.notify();
+			else{
+				this.notifyAll();
+			}
 		}
 		
 		if(this.index < this.parties - 1){
 			synchronized(this){
-				this.index = parties - 1;
+				this.index = this.parties - 1;
 			}	
 		}
 	    return threadIndex;

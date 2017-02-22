@@ -5,8 +5,13 @@
  * rl26589
  * 
  */
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Scanner;
+
 public class Server {
-  public static void main (String[] args) {
+  
+  public static void main (String[] args) throws Exception {
     int tcpPort;
     int udpPort;
     if (args.length != 3) {
@@ -21,7 +26,27 @@ public class Server {
     udpPort = Integer.parseInt(args[1]);
     String fileName = args[2];
 
+    Scanner s = new Scanner(fileName);
+
+    Map<String, Integer> inventory = new HashMap<>();
     // parse the inventory file
+    while(s.hasNext()){
+      int k;
+      String cur = s.next();
+
+      if(s.hasNextInt()){
+        k = s.nextInt();
+      }
+      else{
+        throw new Exception("ERROR: Invalid input file");
+      }
+
+      inventory.put(cur, k);
+    }
+    
+    for(String str: inventory.keySet()){
+    	System.out.println(str+" "+inventory.get(str));
+    }
 
     // TODO: handle request from clients
   }
