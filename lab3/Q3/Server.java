@@ -5,6 +5,8 @@
  * rl26589
  * 
  */
+import java.io.File;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
@@ -25,15 +27,15 @@ public class Server {
     tcpPort = Integer.parseInt(args[0]);
     udpPort = Integer.parseInt(args[1]);
     String fileName = args[2];
-
-    Scanner s = new Scanner(fileName);
+		
+    Scanner s = new Scanner(new File(fileName));
 
     Map<String, Integer> inventory = new HashMap<>();
     // parse the inventory file
     while(s.hasNext()){
       int k;
       String cur = s.next();
-
+			
       if(s.hasNextInt()){
         k = s.nextInt();
       }
