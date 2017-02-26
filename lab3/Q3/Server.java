@@ -6,16 +6,21 @@
  * 
  */
 import java.io.File;
-
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 
 public class Server {
   
+  static boolean mode = false; // false = TCP, true = UDP
+	
   public static void main (String[] args) throws Exception {
     int tcpPort;
     int udpPort;
+    Server myS = new Server();
     if (args.length != 3) {
       System.out.println("ERROR: Provide 3 arguments");
       System.out.println("\t(1) <tcpPort>: the port number for TCP connection");
@@ -34,23 +39,36 @@ public class Server {
     // parse the inventory file
     while(s.hasNext()){
       int k;
-      String cur = s.next();
-			
+      String cur = s.next();		
       if(s.hasNextInt()){
         k = s.nextInt();
       }
       else{
         throw new Exception("ERROR: Invalid input file");
       }
-
       inventory.put(cur, k);
-    }
-    
+    }  
     for(String str: inventory.keySet()){
     	System.out.println(str+" "+inventory.get(str));
     }
+    try{
+    	if(mode){
+    	}//UDP
+    	else{
+    		ServerSocket listener = new ServerSocket(tcpPort);
+    		Socket tcpSocket;
+    		while ((tcpSocket = listener.accept()) != null){
+    			Thread t = new ServerThread(tcpSocket);
+    			t.start();
+    		}
+    	}//TCP
+    } catch (IOException e){
+    	e.printStackTrace();
+    	System.err.println("Server dead: " + e);
+    } 
+  }
 
     // TODO: handle request from clients
-  }
 }
+
 
