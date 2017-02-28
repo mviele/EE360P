@@ -6,9 +6,10 @@
  * rl26589
  * 
  */
+import java.io.PrintWriter;
+import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.Socket;
-
 import java.util.Scanner;
 
 public class Client {
@@ -39,10 +40,14 @@ public class Client {
     catch(Exception e){
       e.printStackTrace();
     }
-    
+
+    PrintWriter out = new PrintWriter(tcp.getOutputStream());
+    BufferedReader in = new BufferedReader(
+        new InputStreamReader(tcp.getInputStream()));
 
     Scanner sc = new Scanner(System.in);
     while (sc.hasNextLine()) {
+      out.flush();
       String cmd = sc.nextLine();
       String[] tokens = cmd.split(" ");
 
@@ -54,69 +59,19 @@ public class Client {
         } else {
           System.out.println("Invalid command, server mode unchanged.");
         }
-      } else if (tokens[0].equals("purchase")) {
-        // TODO: send appropriate command to the server and display the
-        // appropriate responses form the server
-        if(mode){
-          try{
-            udpPurchase(tokens[1], tokens[2], Integer.parseInt(tokens[3]));
+      } else if (tokens[0].equals("cancel") || tokens[0].equals("search") || tokens[0].equals("list")) {
+          if(mode){
+            byte[] cmdArray = cmd.getBytes();
+            DatagramPacket dp = new DatagramPacket(cmdArray, cmdArray.length, "localhost", udpPort);
+            udp.sendPacket(dp);
           }
-          catch(Exception e){
-            System.out.println("Invalid command format");
+          else{
+            out.write(cmd);
           }
-        }
-        else{
-          try{
-
-          }
-          catch(Exception e){
-            System.out.println("Invalid command format");
-          }
-        }
-      } else if (tokens[0].equals("cancel")) {
-        // TODO: send appropriate command to the server and display the
-        // appropriate responses form the server
-      } else if (tokens[0].equals("search")) {
-        // TODO: send appropriate command to the server and display the
-        // appropriate responses form the server
-      } else if (tokens[0].equals("list")) {
-        // TODO: send appropriate command to the server and display the
-        // appropriate responses form the server
       } else {
         System.out.println("ERROR: No such command");
       }
     }
   }
 
-  private static void tcpPurchase(String username, String item, int value){
-
-  }
-
-  private static void udpPurchase(String username, String item, int value){
-
-  }
-
-  private static void tcpCancel(int orderID){
-
-  }
-
-  private static void udpCancel(int orderID){
-
-  }
-
-  private static void tcpSearch(String username){
-
-  }
-
-  private static void udpSearch(String username){
-
-  }
-
-  private static void tcpList(){
-
-  }
-
-  private static void udpList(){
-
-  }
 }
