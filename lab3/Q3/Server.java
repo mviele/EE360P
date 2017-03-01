@@ -1,5 +1,3 @@
-package hmwk3;
-
 /*
  * Group EIDs:
  * mtv364
@@ -9,6 +7,7 @@ package hmwk3;
  */
 import java.io.File;
 import java.io.IOException;
+import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -17,7 +16,10 @@ import java.util.Map;
 import java.util.Scanner;
 
 public class Server {
-  	
+  
+  private static Map<String, Integer> inventory;
+  private static DatagramSocket datasocket;
+
   public static void main (String[] args) throws Exception {
     
     if (args.length != 3) {
@@ -37,7 +39,7 @@ public class Server {
 		
     Scanner s = new Scanner(new File(fileName));
 
-    Map<String, Integer> inventory = new HashMap<>();
+    inventory = new HashMap<>();
     
     // parse the inventory file
     while(s.hasNext()){
@@ -57,24 +59,38 @@ public class Server {
     
     //open UDP and TCP sockets
     try{
-    	//TCP
-		ServerSocket listener = new ServerSocket(tcpPort);
-		Socket tcpSocket;
-		
-		//UDP
-		DatagramSocket datasocket = new DatagramSocket (udpPort);
-		byte [] buf = new byte [packetLength];
-		
-		while(true){
-			
-			//TCP
-			while ((tcpSocket = listener.accept()) != null){
-				Thread t = new ServerThread(tcpSocket);
-				t.start();
-			}
-			
-			//UDP
-		}
+      //TCP
+      ServerSocket listener = new ServerSocket(tcpPort);
+      Socket tcpSocket;
+      
+      //UDP
+      datasocket = new DatagramSocket(udpPort);
+      byte[] buf = new byte[packetLength];
+      
+      while(true){
+        
+        //TCP
+        while ((tcpSocket = listener.accept()) != null){
+          Thread t = new ServerThread(tcpSocket);
+          t.start();
+        }
+        
+        //UDP
+        DatagramPacket datapacket, returnpacket; 
+        try {
+          buf = new byte[packetLength];
+          while (true){
+            datapacket = new DatagramPacket(buf, buf.length); 
+            datasocket.receive(datapacket); 
+            Thread t = new UDPServerThread(datapacket);
+            t.start();
+          }
+        }
+        catch(Exception e){
+          e.printStackTrace();
+        }
+
+      }
     } 
     catch (IOException e){
     	e.printStackTrace();
@@ -82,21 +98,32 @@ public class Server {
     } 
   }
 
+  public synchronized static String purchase(String username, String productName, int quantity){
+
+  }
+
+  public synchronized static String cancel(int orderID){
+
+  }
+
+  public synchronized static String search(String username){
+
+  }
+
+  public synchronized static String list(){
+
+  }
+
+  public synchronized static void udpSend(DatagramPacket packet){
+    datasocket.send(packet);
+  }
+
 }
 
 
 
 
-DatagramPacket datapacket , returnpacket ; 
-int port = 2018; int len = 1024;
-try {
-byte [] buf = new byte [len ] ;
-while (true ) {
-datapacket = new DatagramPacket( buf , buf . length ); datasocket . receive ( datapacket ); returnpacket = new DatagramPacket( datapacket . getData () ,
-datapacket . getLength () , datapacket . getAddress () , datapacket . getPort ( ) ) ;
-datasocket . send ( returnpacket );
-}
-} 
+
 
 
 
