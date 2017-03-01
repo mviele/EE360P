@@ -11,14 +11,18 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
 public class Server {
   
   private static Map<String, Integer> inventory;
+  private static List<Order> orderList;
   private static DatagramSocket datasocket;
+  private static int nextOrderID;
 
   public static void main (String[] args) throws Exception {
     
@@ -38,8 +42,9 @@ public class Server {
     int packetLength = 1024;
 		
     Scanner s = new Scanner(new File(fileName));
-
+    orderList = new ArrayList<>();
     inventory = new HashMap<>();
+    nextOrderID = 1;
     
     // parse the inventory file
     while(s.hasNext()){
@@ -99,11 +104,43 @@ public class Server {
   }
 
   public synchronized static String purchase(String username, String productName, int quantity){
+    if(inventory.containsKey(productName)){
+      if(inventory.get(productName) >= quantity){
+        //Subtract inventory
+        inventory.put(productName, inventory.get(productName) - quantity);
 
+        //Add order to orderList
+        Order order = new Order(nextOrderID++, username, productName, quantity);
+        orderList.add(order);
+
+        //Successful purchase message
+        return "";
+      }
+    }
+    else{
+      //No such product message
+      return "";
+    }
+    
   }
 
   public synchronized static String cancel(int orderID){
+    for(Order order: orderList){
+      if(order.getOrderID() == orderID){
+        //Add inventory back
+        String product = order.getProductName();
+        inventory.put(product, order.getQuantity() + inventory.get(product));
 
+        //Remove order from order list
+        orderList.remove(order);
+
+        //Successful cancellation message
+        return ""; 
+      }
+    }
+
+    //No such order message
+    return "";
   }
 
   public synchronized static String search(String username){

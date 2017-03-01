@@ -21,29 +21,22 @@ public class UDPServerThread extends Thread {
 	public void run() {
 		try{
 			String command = new String(packet.getData());
-			String[] commands = command.split("\n");
+            String[] tokens = command.split(" ");
             String returnString;
-            for(String s: commands){
-                String[] tokens = s.split(" ");
-                if(tokens[0].equals("purchase")){
-                    String returnData = Server.purchase(tokens[1], tokens[2], Integer.parseInt(tokens[3]));
-                    returnString += returnData + "\n";
-                }
-                else if(tokens[0].equals("cancel")){
-                    String returnData = Server.cancel(Integer.parseInt(tokens[1]));
-                    returnString += returnData + "\n";
-                }
-                else if(tokens[0].equals("search")){
-                    String returnData = Server.search(tokens[1]);
-                    returnString += returnData + "\n";
-                }
-                else if(tokens[0].equals("list")){
-                    String returnData = Server.list();
-                    returnString += returnData + "\n";
-                }
-                else{
-                    returnString += "Invalid command\n";
-                }
+            if(tokens[0].equals("purchase")){
+                returnString = Server.purchase(tokens[1], tokens[2], Integer.parseInt(tokens[3]));
+            }
+            else if(tokens[0].equals("cancel")){
+                returnString = Server.cancel(Integer.parseInt(tokens[1]));
+            }
+            else if(tokens[0].equals("search")){
+                returnString = Server.search(tokens[1]);
+            }
+            else if(tokens[0].equals("list")){
+                returnString = Server.list();
+            }
+            else{
+                returnString = "Invalid command";
             }
             
             returnPacket = new DatagramPacket(returnString.getBytes(), returnString.getBytes().length, 
