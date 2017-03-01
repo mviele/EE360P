@@ -1,6 +1,15 @@
-import java.net.*; 
-import java.io.*; 
-import java.util.*;
+/*
+ * Group EIDs:
+ * mtv364
+ * raz354
+ * rl26589
+ * 
+ */
+
+import java.io.IOException; 
+import java.io.PrintWriter;
+import java.net.Socket;
+import java.util.Scanner;
 
 public class ServerThread extends Thread {
 	Socket Client;
