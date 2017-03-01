@@ -144,11 +144,24 @@ public class Server {
   }
 
   public synchronized static String search(String username){
+    String searchResult;
+    for(Order order: orderList){
+      if(order.getUsername().equals(username)){
+        searchResult += Integer.toString(order.getOrderID()) + ", " + 
+          order.getProductName() + ", " + Integer.toString(order.getQuantity()) + "\n";
+      }
+    }
 
+    return searchResult != null ? searchResult : "No order found for " + username; 
   }
 
   public synchronized static String list(){
+    String listString;
+    for(String s: inventory.keySet()){
+      listString += s + " " + Integer.toString(inventory.get(s)) + "\n";
+    }
 
+    return listString;
   }
 
   public synchronized static void udpSend(DatagramPacket packet){
