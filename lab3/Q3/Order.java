@@ -35,4 +35,9 @@ public class Order{
     public int getQuantity(){
         return this.quantity;
     }
+
+    //<order-id> <user-name> <product-name> <quantity>
+    public String toString(){
+        return Integer.toString(orderID) + " " + username + " " + productName + " " + Integer.toString(quantity);
+    }
 }

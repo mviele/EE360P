@@ -27,11 +27,20 @@ public class TCPServerThread extends Thread {
 			String returnString = ""; 
 			InputStreamReader input = new InputStreamReader(client.getInputStream());
 			BufferedReader din = new BufferedReader(input); 
-			PrintWriter print = new PrintWriter(client.getOutputStream());
+			PrintWriter out = new PrintWriter(client.getOutputStream(), true);
 			String command = din.readLine();
-			StringTokenizer st = new StringTokenizer(command); 
 			String[] tokens = command.split(" ");
-			if(tokens[0].equals("purchase")){
+			if(tokens[0].equals("setmode")){
+				if(tokens[1].equalsIgnoreCase("t")){
+					Server.setMode(false);
+					return;
+				}
+				else if(tokens[1].equalsIgnoreCase("u")){
+					Server.setMode(true);
+					return;
+				}
+			}
+			else if(tokens[0].equals("purchase")){
 				returnString = Server.purchase(tokens[1], tokens[2], Integer.parseInt(tokens[3]));
 			}
 			else if(tokens[0].equals("cancel")){
@@ -43,10 +52,11 @@ public class TCPServerThread extends Thread {
 			else if(tokens[0].equals("list")){
 				returnString = Server.list();
 			}
-			print.append(returnString);
-			Socket returnSocket = new Socket(client.getInetAddress(), client.getPort());
-			Server.tcpSend(returnSocket); 
+
+			out.write(returnString);
+			out.flush();
 			client.close();
+
 		} catch (IOException e){
 			System.err.println(e);
 		} 

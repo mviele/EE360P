@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -23,6 +24,7 @@ public class Server {
   private static List<Order> orderList;
   private static DatagramSocket datasocket;
   private static int nextOrderID;
+  private static boolean mode;
 
   public static void main (String[] args) throws Exception {
     
@@ -34,7 +36,7 @@ public class Server {
       System.exit(-1);
     }
     
-    Server myServer = new Server();
+    mode = false;
     int tcpPort = Integer.parseInt(args[0]);
     int udpPort = Integer.parseInt(args[1]);
     String fileName = args[2];
@@ -57,10 +59,8 @@ public class Server {
         throw new Exception("ERROR: Invalid input file");
       }
       inventory.put(cur, k);
-    }  
-    for(String str: inventory.keySet()){
-    	System.out.println(str+" "+inventory.get(str));
-    }
+    } 
+    s.close();
     
     //open UDP and TCP sockets
     try{
@@ -69,30 +69,33 @@ public class Server {
       Socket tcpSocket;
       
       //UDP
-      datasocket = new DatagramSocket(udpPort);
+      datasocket = new DatagramSocket();
       byte[] buf = new byte[packetLength];
       
       while(true){
-        
-        //TCP
-        while ((tcpSocket = listener.accept()) != null){
-          Thread t = new TCPServerThread(tcpSocket);
-          t.start();
-        }
-        
-        //UDP
-        DatagramPacket datapacket, returnpacket; 
-        try {
-          buf = new byte[packetLength];
-          while (true){
-            datapacket = new DatagramPacket(buf, buf.length); 
-            datasocket.receive(datapacket); 
-            Thread t = new UDPServerThread(datapacket);
+        if(!mode){
+          //TCP
+          if((tcpSocket = listener.accept()) != null){
+            Thread t = new TCPServerThread(tcpSocket);
+            System.out.println(tcpSocket.toString());
             t.start();
+            t.join();
           }
         }
-        catch(Exception e){
-          e.printStackTrace();
+        else{
+          //UDP
+          DatagramPacket datapacket, returnpacket; 
+          try {
+            buf = new byte[packetLength];
+            datapacket = new DatagramPacket(buf, buf.length, InetAddress.getLocalHost(), udpPort); 
+            datasocket.receive(datapacket);
+            Thread t = new UDPServerThread(datapacket);
+            t.start();
+            t.join();
+          }
+          catch(Exception e){
+            e.printStackTrace();
+          }
         }
 
       }
@@ -114,15 +117,15 @@ public class Server {
         orderList.add(order);
 
         //Successful purchase message
-        return "";
+        return "You order has been placed, " + order.toString();
       }
 
       //Insufficient quantity message
-      return "";
+      return "Not Available - Not enough items";
     }
     else{
       //No such product message
-      return "";
+      return "Not Available - We do not sell this product";
     }
     
   }
@@ -138,12 +141,12 @@ public class Server {
         orderList.remove(order);
 
         //Successful cancellation message
-        return ""; 
+        return "Order " + Integer.toString(orderID) + " is canceled"; 
       }
     }
 
     //No such order message
-    return "";
+    return Integer.toString(orderID) + " not found, no such order";
   }
 
   public synchronized static String search(String username){
@@ -174,6 +177,10 @@ public class Server {
     catch(Exception e){
       e.printStackTrace();
     }
+  }
+
+  public synchronized static void setMode(boolean bool){
+    mode = bool;
   }
 
 }

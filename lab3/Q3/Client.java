@@ -6,15 +6,18 @@
  * rl26589
  * 
  */
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.util.Scanner;
 
 public class Client {
 
-  public static void main(String[] args) {
+  public static void main(String[] args) throws Exception{
     String hostAddress;
     int tcpPort;
     int udpPort;
@@ -33,20 +36,18 @@ public class Client {
 
     boolean mode = false; //false = tcp, true = udp
 
-    try{
-      Socket tcp = new Socket("localhost", tcpPort);
-      DatagramSocket udp = new DatagramSocket(udpPort);
-    }
-    catch(Exception e){
-      e.printStackTrace();
-    }
-
-    PrintWriter out = new PrintWriter(tcp.getOutputStream());
-    BufferedReader in = new BufferedReader(
-        new InputStreamReader(tcp.getInputStream()));
+    Socket tcp; 
+    DatagramSocket udp;
+    
+    PrintWriter out;
+    BufferedReader in;
 
     Scanner sc = new Scanner(System.in);
     while (sc.hasNextLine()) {
+      tcp = new Socket("localhost", tcpPort);
+      out = new PrintWriter(tcp.getOutputStream(), true);
+      udp = new DatagramSocket();
+      in = new BufferedReader(new InputStreamReader(tcp.getInputStream()));
       out.flush();
       String cmd = sc.nextLine();
       String[] tokens = cmd.split(" ");
@@ -54,19 +55,33 @@ public class Client {
       if (tokens[0].equals("setmode")) {
         if (tokens[1].equalsIgnoreCase("t")) {
           mode = false;
+          out.write(cmd + "\n");
+          out.flush();
         } else if (tokens[1].equalsIgnoreCase("u")) {
           mode = true;
+          out.write(cmd + "\n");
+          out.flush();
         } else {
           System.out.println("Invalid command, server mode unchanged.");
         }
-      } else if (tokens[0].equals("cancel") || tokens[0].equals("search") || tokens[0].equals("list")) {
+      } else if (tokens[0].equals("purchase") || tokens[0].equals("cancel") || 
+                 tokens[0].equals("search") || tokens[0].equals("list")) {
           if(mode){
             byte[] cmdArray = cmd.getBytes();
-            DatagramPacket dp = new DatagramPacket(cmdArray, cmdArray.length, "localhost", udpPort);
-            udp.sendPacket(dp);
+            DatagramPacket dp = new DatagramPacket(cmdArray, cmdArray.length, InetAddress.getLocalHost(), udpPort);
+            udp.send(dp);
+            dp = new DatagramPacket(new byte[1024], 1024);
+            udp.receive(dp);
+            System.out.println(new String(dp.getData()));
           }
           else{
-            out.write(cmd);
+            out.write(cmd + "\n");
+            out.flush();
+            String line, message = new String();
+            while((line = in.readLine()) != null){
+              message += line + "\n";
+            }
+            System.out.println(message);
           }
       } else {
         System.out.println("ERROR: No such command");
