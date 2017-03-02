@@ -76,7 +76,7 @@ public class Server {
         
         //TCP
         while ((tcpSocket = listener.accept()) != null){
-          Thread t = new ServerThread(tcpSocket);
+          Thread t = new TCPServerThread(tcpSocket);
           t.start();
         }
         
@@ -116,6 +116,9 @@ public class Server {
         //Successful purchase message
         return "";
       }
+
+      //Insufficient quantity message
+      return "";
     }
     else{
       //No such product message
@@ -144,7 +147,7 @@ public class Server {
   }
 
   public synchronized static String search(String username){
-    String searchResult;
+    String searchResult = new String();
     for(Order order: orderList){
       if(order.getUsername().equals(username)){
         searchResult += Integer.toString(order.getOrderID()) + ", " + 
@@ -152,11 +155,11 @@ public class Server {
       }
     }
 
-    return searchResult != null ? searchResult : "No order found for " + username; 
+    return searchResult.length() != 0 ? searchResult : "No order found for " + username; 
   }
 
   public synchronized static String list(){
-    String listString;
+    String listString = new String();
     for(String s: inventory.keySet()){
       listString += s + " " + Integer.toString(inventory.get(s)) + "\n";
     }
@@ -165,7 +168,12 @@ public class Server {
   }
 
   public synchronized static void udpSend(DatagramPacket packet){
-    datasocket.send(packet);
+    try{
+      datasocket.send(packet);
+    }
+    catch(Exception e){
+      e.printStackTrace();
+    }
   }
 
 }

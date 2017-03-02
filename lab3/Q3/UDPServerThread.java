@@ -39,7 +39,7 @@ public class UDPServerThread extends Thread {
                 returnString = "Invalid command";
             }
             
-            returnPacket = new DatagramPacket(returnString.getBytes(), returnString.getBytes().length, 
+            DatagramPacket returnPacket = new DatagramPacket(returnString.getBytes(), returnString.getBytes().length, 
                 packet.getAddress(), packet.getPort());
             Server.udpSend(returnPacket);
 		} catch (Exception e){
