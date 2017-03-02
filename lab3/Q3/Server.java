@@ -1,3 +1,5 @@
+
+
 /*
  * Group EIDs:
  * mtv364
@@ -69,7 +71,7 @@ public class Server {
       Socket tcpSocket;
       
       //UDP
-      datasocket = new DatagramSocket();
+      datasocket = new DatagramSocket(udpPort);
       byte[] buf = new byte[packetLength];
       
       while(true){
@@ -84,11 +86,14 @@ public class Server {
         }
         else{
           //UDP
+          System.out.println("udp else");
           DatagramPacket datapacket, returnpacket; 
           try {
             buf = new byte[packetLength];
-            datapacket = new DatagramPacket(buf, buf.length); 
+            datapacket = new DatagramPacket(buf, buf.length);
+            System.out.println("udp pre receive");
             datasocket.receive(datapacket);
+            System.out.println("udp post receive");
             Thread t = new UDPServerThread(datapacket);
             t.start();
             t.join();
@@ -184,6 +189,24 @@ public class Server {
   }
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
