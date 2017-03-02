@@ -87,7 +87,7 @@ public class Server {
           DatagramPacket datapacket, returnpacket; 
           try {
             buf = new byte[packetLength];
-            datapacket = new DatagramPacket(buf, buf.length, InetAddress.getLocalHost(), udpPort); 
+            datapacket = new DatagramPacket(buf, buf.length); 
             datasocket.receive(datapacket);
             Thread t = new UDPServerThread(datapacket);
             t.start();
