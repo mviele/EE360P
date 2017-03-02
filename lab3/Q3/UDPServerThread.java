@@ -20,7 +20,8 @@ public class UDPServerThread extends Thread {
 	}
 	public void run() {
 		try{
-			String command = new String(packet.getData());
+			String command = new String(packet.getData(), 0, packet.getLength());
+            System.out.println(command.length());
             String[] tokens = command.split(" ");
             String returnString;
             if(tokens[0].equals("purchase")){

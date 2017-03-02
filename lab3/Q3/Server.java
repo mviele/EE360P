@@ -79,21 +79,17 @@ public class Server {
           //TCP
           if((tcpSocket = listener.accept()) != null){
             Thread t = new TCPServerThread(tcpSocket);
-            System.out.println(tcpSocket.toString());
             t.start();
             t.join();
           }
         }
         else{
           //UDP
-          System.out.println("udp else");
           DatagramPacket datapacket, returnpacket; 
           try {
             buf = new byte[packetLength];
             datapacket = new DatagramPacket(buf, buf.length);
-            System.out.println("udp pre receive");
             datasocket.receive(datapacket);
-            System.out.println("udp post receive");
             Thread t = new UDPServerThread(datapacket);
             t.start();
             t.join();
