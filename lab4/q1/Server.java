@@ -7,6 +7,7 @@
  */
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.DatagramPacket;
@@ -37,11 +38,10 @@ public class Server {
     
     PriorityQueue<Long> queue = new PriorityQueue<>();
     boolean firstInitialization = true;
-    List<String> otherServers = new ArrayList<String>();
-    List<String> otherServersPorts = new ArrayList<String>();
+    List<String> otherServers = new ArrayList<>();
+    List<Integer> otherServersPorts = new ArrayList<>();
     int uniqueID = -1;
     int numServers = -1;
-    String fileName = null;
       
     while (s.hasNextLine()) {
       if(firstInitialization){
@@ -54,15 +54,14 @@ public class Server {
       }
       //Need to make sure we have been initialized
       else{
-        String command = sc.nextLine();
+        String command = s.nextLine();
         String[] tokens = command.split(":");
         otherServers.add(tokens[0]);
-        otherServersPorts.add(tokens[1]);
+        otherServersPorts.add(Integer.parseInt(tokens[1]));
       }
     }
     
-    sc.close();
-      
+    s.close();
     
     //change filename to Java File & pass to inventory class
     File inventoryFile = new File(fileName);
@@ -72,7 +71,7 @@ public class Server {
     try{
       while(true){
         //TCP
-        ServerSocket listener = new ServerSocket(tcpPort);
+        ServerSocket listener = new ServerSocket(otherServersPorts.get(uniqueID - 1));
         Socket tcpSocket;
         if((tcpSocket = listener.accept()) != null){
          /*
@@ -95,7 +94,7 @@ public class Server {
               //1. Generate Timestamp and send to all other servers
               long timestamp = System.currentTimeMillis();
               for(int i = 0; i < otherServers.size(); i++){
-                if(i == uniqueID) continue;
+                if(i == uniqueID - 1) continue;
 
                 //1. Make Socket to connect to servers
                 Socket otherServer = new Socket(otherServers.get(i), otherServersPorts.get(i));

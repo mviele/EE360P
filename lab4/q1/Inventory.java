@@ -1,7 +1,16 @@
+/*
+ * Group EIDs:
+ * mtv364
+ * raz354
+ * rl26589
+ * 
+ */
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 
 public class Inventory{
 
@@ -12,42 +21,43 @@ public class Inventory{
     private int nextOrderID;
     private Inventory(File file){
         inventoryMap = new HashMap<>();
-        Scanner s = new Scanner(file);
-        orderList = new ArrayList<>();
-        nextOrderID = 1;
-        
-        // parse the inventory file
-        while(s.hasNext()){
-            int k;
-            String cur = s.next();		
-            if(s.hasNextInt()){
-                k = s.nextInt();
-            }
-            else{
-                throw new Exception("ERROR: Invalid input file");
-            }
-            inventoryMap.put(cur, k);
-        } 
-        s.close();
+        try{
+            Scanner s = new Scanner(file);
+            orderList = new ArrayList<>();
+            nextOrderID = 1;
+            
+            // parse the inventory file
+            while(s.hasNext()){
+                int k;
+                String cur = s.next();		
+                if(s.hasNextInt()){
+                    k = s.nextInt();
+                }
+                else{
+                    throw new Exception("ERROR: Invalid input file");
+                }
+                inventoryMap.put(cur, k);
+            } 
+            s.close();
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }
     }
 
-    public Inventory getInstance(File file){
-        if(this.inventory == null){
-            synchronized(this){
-                if(this.inventory == null){
-                    this.inventory = new Inventory(file);
-                }
-            }
+    public synchronized static Inventory getInstance(File file){
+        if(inventory == null){
+            inventory = new Inventory(file);
         }
 
         return inventory;
     }
 
     public String purchase(String username, String productName, int quantity){
-        if(inventory.containsKey(productName)){
-            if(inventory.get(productName) >= quantity){
+        if(inventoryMap.containsKey(productName)){
+            if(inventoryMap.get(productName) >= quantity){
                 //Subtract inventory
-                inventory.put(productName, inventory.get(productName) - quantity);
+                inventoryMap.put(productName, inventoryMap.get(productName) - quantity);
 
                 //Add order to orderList
                 Order order = new Order(nextOrderID++, username, productName, quantity);
@@ -72,7 +82,7 @@ public class Inventory{
         if(order.getOrderID() == orderID){
             //Add inventory back
             String product = order.getProductName();
-            inventory.put(product, order.getQuantity() + inventory.get(product));
+            inventoryMap.put(product, order.getQuantity() + inventoryMap.get(product));
 
             //Remove order from order list
             orderList.remove(order);
@@ -100,8 +110,8 @@ public class Inventory{
 
   public String list(){
     String listString = new String();
-    for(String s: inventory.keySet()){
-      listString += s + " " + Integer.toString(inventory.get(s)) + "\n";
+    for(String s: inventoryMap.keySet()){
+      listString += s + " " + Integer.toString(inventoryMap.get(s)) + "\n";
     }
     
     return listString;
