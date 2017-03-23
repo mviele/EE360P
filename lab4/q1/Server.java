@@ -75,14 +75,13 @@ public class Server {
         ServerSocket listener = new ServerSocket(tcpPort);
         Socket tcpSocket;
         if((tcpSocket = listener.accept()) != null){
-          //Identify, is it a client or another server?
          /*
-         * 4 Types of messages: 
-         * Client Request 
-         * Acknowledgement
-         * Mutex Request from another server
-         * Mutex Release
-         */
+          * 4 Types of messages: 
+          * Client Request 
+          * Acknowledgement
+          * Mutex Request from another server
+          * Mutex Release
+          */
 
           String returnString = ""; 
           InputStreamReader input = new InputStreamReader(tcpSocket.getInputStream());
@@ -110,8 +109,38 @@ public class Server {
 
               //2. Wait for n - 1 acknowledgements
               int ack = 0;
-              while(ack < numServers - 1){
+              while(ack < numServers - 1 && queue.peek() != timestamp){
+                Socket sock;
+                if((sock = listener.accept()) != null){
+                  InputStreamReader inStream = new InputStreamReader(sock.getInputStream());
+                  BufferedReader inReader = new BufferedReader(input); 
+                  PrintWriter outWriter = new PrintWriter(sock.getOutputStream(), true);
+                  String com = din.readLine();
+                  String[] comTokens = command.split(" ");
 
+                  if(comTokens[0].equals("server")){
+                    if(comTokens[1].equals("acknowledge")){
+                      ack++;
+                    }
+                    else if(comTokens[1].equals("request")){
+                      //1. Add request to queue
+                      Long stamp = Long.parseLong(tokens[3]);
+                      queue.add(stamp);
+
+                      //2. Send back acknowledgement
+                      int otherID = Integer.parseInt(tokens[2]);
+                      //TODO: Setup connection with sender and send acknowledgement
+                    }
+                    else if(comTokens[1].equals("release")){
+                      //1. Remove given timestamp from queue
+                      Long stamp = Long.parseLong(comTokens[2]);
+                      Long head = queue.remove();
+                      if(stamp != head){
+                        throw new Exception("Queue error");
+                      }
+                    }
+                  }
+                }
               }
               
               //3. Edit inventory
@@ -128,7 +157,7 @@ public class Server {
               int otherID = Integer.parseInt(tokens[2]);
               //TODO: Setup connection with sender and send acknowledgement
             }
-            else if(tokens[1].equals("relase")){
+            else if(tokens[1].equals("release")){
               //1. Remove given timestamp from queue
               Long stamp = Long.parseLong(tokens[2]);
               Long head = queue.remove();
@@ -149,69 +178,4 @@ public class Server {
     	System.err.println("Server dead: " + e);
     } 
   }
-
-  public synchronized static String purchase(String username, String productName, int quantity){
-    if(inventory.containsKey(productName)){
-      if(inventory.get(productName) >= quantity){
-        //Subtract inventory
-        inventory.put(productName, inventory.get(productName) - quantity);
-
-        //Add order to orderList
-        Order order = new Order(nextOrderID++, username, productName, quantity);
-        orderList.add(order);
-
-        //Successful purchase message
-        return "You order has been placed, " + order.toString();
-      }
-
-      //Insufficient quantity message
-      return "Not Available - Not enough items";
-    }
-    else{
-      //No such product message
-      return "Not Available - We do not sell this product";
-    }
-    
-  }
-
-  public synchronized static String cancel(int orderID){
-    for(Order order: orderList){
-      if(order.getOrderID() == orderID){
-        //Add inventory back
-        String product = order.getProductName();
-        inventory.put(product, order.getQuantity() + inventory.get(product));
-
-        //Remove order from order list
-        orderList.remove(order);
-
-        //Successful cancellation message
-        return "Order " + Integer.toString(orderID) + " is canceled"; 
-      }
-    }
-
-    //No such order message
-    return Integer.toString(orderID) + " not found, no such order";
-  }
-
-  public synchronized static String search(String username){
-    String searchResult = new String();
-    for(Order order: orderList){
-      if(order.getUsername().equals(username)){
-        searchResult += Integer.toString(order.getOrderID()) + ", " + 
-          order.getProductName() + ", " + Integer.toString(order.getQuantity()) + "\n";
-      }
-    }
-
-    return searchResult.length() != 0 ? searchResult : "No order found for " + username; 
-  }
-
-  public synchronized static String list(){
-    String listString = new String();
-    for(String s: inventory.keySet()){
-      listString += s + " " + Integer.toString(inventory.get(s)) + "\n";
-    }
-
-    return listString;
-  }
-
 }
