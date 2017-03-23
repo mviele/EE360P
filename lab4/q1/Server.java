@@ -129,7 +129,13 @@ public class Server {
 
                       //2. Send back acknowledgement
                       int otherID = Integer.parseInt(tokens[2]);
-                      //TODO: Setup connection with sender and send acknowledgement
+                      
+                      Socket otherServer = new Socket(otherServers.get(otherID), otherServersPorts.get(otherID));
+                      PrintWriter servOut = new PrintWriter(otherServer.getOutputStream(), true);
+                      BufferedReader servIn = new BufferedReader(new InputStreamReader(otherServer.getInputStream()));
+
+                      servOut.write("server acknowledge\n");
+                      servOut.flush();
                     }
                     else if(comTokens[1].equals("release")){
                       //1. Remove given timestamp from queue
@@ -144,8 +150,45 @@ public class Server {
               }
               
               //3. Edit inventory
+              if(tokens[0].equals("purchase")){
+                returnString = inventory.purchase(tokens[1], tokens[2], Integer.parseInt(tokens[3]));
+                out.write(returnString + "\n");
+                out.flush();
+                tcpSocket.close();
+              }
+              else if(tokens[0].equals("cancel")){
+                returnString = inventory.cancel(Integer.parseInt(tokens[1]));
+                out.write(returnString + "\n");
+                out.flush();
+                tcpSocket.close();
+              } 
+              else if(tokens[0].equals("search")){
+                returnString = inventory.search(tokens[1]);
+                out.write(returnString + "\n");
+                out.flush();
+                tcpSocket.close();
+              } 
+              else if(tokens[0].equals("list")){
+                returnString = inventory.list();
+                out.write(returnString + "\n");
+                out.flush();
+                tcpSocket.close();
+              }
+
+
               //4. Send release to all other servers
-              //5. Send return message back to client
+              for(int i = 0; i < otherServers.size(); i++){
+                if(i == uniqueID) continue;
+
+                //1. Make Socket to connect to servers
+                Socket otherServer = new Socket(otherServers.get(i), otherServersPorts.get(i));
+                PrintWriter servOut = new PrintWriter(otherServer.getOutputStream(), true);
+                BufferedReader servIn = new BufferedReader(new InputStreamReader(otherServer.getInputStream()));
+
+                //2. Send Message of the form "server request <myServerID> <timestamp>"
+                servOut.write("server release" + Long.toString(timestamp) +"\n");
+                servOut.flush();
+              }
           }
           else if(tokens[0].equals("server")){
             if(tokens[1].equals("request")){
@@ -155,7 +198,12 @@ public class Server {
 
               //2. Send back acknowledgement
               int otherID = Integer.parseInt(tokens[2]);
-              //TODO: Setup connection with sender and send acknowledgement
+              Socket otherServer = new Socket(otherServers.get(otherID), otherServersPorts.get(otherID));
+              PrintWriter servOut = new PrintWriter(otherServer.getOutputStream(), true);
+              BufferedReader servIn = new BufferedReader(new InputStreamReader(otherServer.getInputStream()));
+
+              servOut.write("server acknowledge\n");
+              servOut.flush();
             }
             else if(tokens[1].equals("release")){
               //1. Remove given timestamp from queue
@@ -166,10 +214,6 @@ public class Server {
               }
             }
           }
-
-          // Thread t = new TCPServerThread(tcpSocket);
-          // t.start();
-          // t.join();
         }
       }
     } 
