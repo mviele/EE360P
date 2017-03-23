@@ -105,6 +105,7 @@ public class Server {
                 //2. Send Message of the form "server request <myServerID> <timestamp>"
                 servOut.write("server request " + Integer.toString(uniqueID) + Long.toString(timestamp) + "\n");
                 servOut.flush();
+                otherServer.close();
               }
 
               //2. Wait for n - 1 acknowledgements
@@ -146,7 +147,8 @@ public class Server {
                       }
                     }
                   }
-                }
+                  sock.close();
+                }   
               }
               
               //3. Edit inventory
@@ -188,6 +190,7 @@ public class Server {
                 //2. Send Message of the form "server request <myServerID> <timestamp>"
                 servOut.write("server release" + Long.toString(timestamp) +"\n");
                 servOut.flush();
+                otherServer.close();
               }
           }
           else if(tokens[0].equals("server")){
@@ -204,15 +207,20 @@ public class Server {
 
               servOut.write("server acknowledge\n");
               servOut.flush();
+              tcpSocket.close();
             }
             else if(tokens[1].equals("release")){
               //1. Remove given timestamp from queue
               Long stamp = Long.parseLong(tokens[2]);
               Long head = queue.remove();
+              tcpSocket.close();
               if(stamp != head){
                 throw new Exception("Queue error");
               }
             }
+          }
+          else{
+            tcpSocket.close();
           }
         }
       }
