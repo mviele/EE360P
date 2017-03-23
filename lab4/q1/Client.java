@@ -32,12 +32,8 @@ public class Client {
 
     hostAddress = args[0];
     tcpPort = Integer.parseInt(args[1]);
-    udpPort = Integer.parseInt(args[2]);
-
-    boolean mode = false; //false = tcp, true = udp
 
     Socket tcp; 
-    DatagramSocket udp;
     
     PrintWriter out;
     BufferedReader in;
@@ -52,19 +48,7 @@ public class Client {
       String cmd = sc.nextLine();
       String[] tokens = cmd.split(" ");
 
-      if (tokens[0].equals("setmode")) {
-        if (tokens[1].equalsIgnoreCase("t")) {
-          mode = false;
-          out.write(cmd + "\n");
-          out.flush();
-        } else if (tokens[1].equalsIgnoreCase("u")) {
-          mode = true;
-          out.write(cmd + "\n");
-          out.flush();
-        } else {
-          System.out.println("Invalid command, server mode unchanged.");
-        }
-      } else if (tokens[0].equals("purchase") || tokens[0].equals("cancel") || 
+      if (tokens[0].equals("purchase") || tokens[0].equals("cancel") || 
                  tokens[0].equals("search") || tokens[0].equals("list")) {
           if(mode){
             byte[] cmdArray = cmd.getBytes();

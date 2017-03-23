@@ -64,41 +64,26 @@ public class Server {
     } 
     s.close();
     
-    //open UDP and TCP sockets
+    //open TCP sockets
     try{
       //TCP
       ServerSocket listener = new ServerSocket(tcpPort);
       Socket tcpSocket;
       
-      //UDP
-      datasocket = new DatagramSocket(udpPort);
-      byte[] buf = new byte[packetLength];
-      
       while(true){
-        if(!mode){
-          //TCP
-          if((tcpSocket = listener.accept()) != null){
-            Thread t = new TCPServerThread(tcpSocket);
-            t.start();
-            t.join();
-          }
-        }
-        else{
-          //UDP
-          DatagramPacket datapacket, returnpacket; 
-          try {
-            buf = new byte[packetLength];
-            datapacket = new DatagramPacket(buf, buf.length);
-            datasocket.receive(datapacket);
-            Thread t = new UDPServerThread(datapacket);
-            t.start();
-            t.join();
-          }
-          catch(Exception e){
-            e.printStackTrace();
-          }
-        }
+        if((tcpSocket = listener.accept()) != null){
+          //Identify, is it a client or another server?
+         /*
+         * 3 Types of messages: 
+         * Client Request 
+         * Acknowledgement
+         * Mutex Request from another server
+         */
 
+          Thread t = new TCPServerThread(tcpSocket);
+          t.start();
+          t.join();
+        }
       }
     } 
     catch (IOException e){
