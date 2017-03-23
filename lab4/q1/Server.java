@@ -5,8 +5,10 @@
  * rl26589
  * 
  */
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -73,10 +75,11 @@ public class Server {
         if((tcpSocket = listener.accept()) != null){
           //Identify, is it a client or another server?
          /*
-         * 3 Types of messages: 
+         * 4 Types of messages: 
          * Client Request 
          * Acknowledgement
          * Mutex Request from another server
+         * Mutex Release
          */
 
           String returnString = ""; 
@@ -89,6 +92,19 @@ public class Server {
              tokens[0].equals("search") || tokens[0].equals("list")){
 
               //1. Generate Timestamp and send to all other servers
+              long timestamp = System.currentTimeMillis();
+              for(int i = 0; i < otherServers.size(); i++){
+                if(i == uniqueID) continue;
+
+                //1. Make Socket to connect to servers
+                Socket otherServer = new Socket(otherServers.get(i), otherServersPorts.get(i));
+                PrintWriter servOut = new PrintWriter(otherServer.getOutputStream(), true);
+                BufferedReader servIn = new BufferedReader(new InputStreamReader(otherServer.getInputStream()));
+
+                //2. Send Message of the form "server request <myServerID> <timestamp>"
+                servOut.write("server request " + Integer.toString(uniqueID) + Long.toString(timestamp) + "\n");
+                servOut.flush();
+              }
               //2. Wait for n - 1 acknowledgements
               //3. Edit inventory
               //4. Send release to all other servers

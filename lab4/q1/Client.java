@@ -37,16 +37,16 @@ public class Client {
     
     int numServers = Integer.parseInt(args[0]); //get num servers available
     
-    for(int count=0; count<numServers; count++){
-    	String info = sc.nextLine();
+    for(int count = 0; count < numServers; count++){
+    	  String info = sc.nextLine();
         String[] tokens = info.split(":");
         InetAddress address = InetAddress.getByName(tokens[0]);
         addresses.add(address);
         int port = Integer.parseInt(tokens[1]);
         ports.add(port);
     } //add all current server addresses and ports to the lists
-    for(int count=0; count<ports.size(); count++){
-    	placeholder = -1;
+    for(int count = 0; count < ports.size(); count++){
+        placeholder = -1;
         InetAddress address = addresses.get(count);
         int port = ports.get(count);
         try{
@@ -63,35 +63,35 @@ public class Client {
     }    
     while (sc.hasNextLine()) {
     	try{
-    		out = new PrintWriter(tcp.getOutputStream(), true);
-            in = new BufferedReader(new InputStreamReader(tcp.getInputStream()));
-            String cmd = sc.nextLine();
-            String[] tokens = cmd.split(" ");
-            if (tokens[0].equals("purchase") || tokens[0].equals("cancel") || 
-                tokens[0].equals("search") || tokens[0].equals("list")) {
-                  out.write(cmd + "\n");
-                  out.flush();
-                  try {
-                      double time1 = System.currentTimeMillis();
-                      while (!(in.ready())) {
-                        double time2 = System.currentTimeMillis();
-                        if (time2 - time1 >= 100) {
-                          throw new SocketTimeoutException("Timeout");
-                        }
-                      }
-                  } catch (IOException e) {
-                      System.out.println("Error");
-                      System.exit(-1);
+    		  out = new PrintWriter(tcp.getOutputStream(), true);
+          in = new BufferedReader(new InputStreamReader(tcp.getInputStream()));
+          String cmd = sc.nextLine();
+          String[] tokens = cmd.split(" ");
+          if (tokens[0].equals("purchase") || tokens[0].equals("cancel") || 
+              tokens[0].equals("search") || tokens[0].equals("list")) {
+              out.write(cmd + "\n");
+              out.flush();
+              try {
+                  double time1 = System.currentTimeMillis();
+                  while (!(in.ready())) {
+                    double time2 = System.currentTimeMillis();
+                    if (time2 - time1 >= 100) {
+                      throw new SocketTimeoutException("Timeout");
+                    }
                   }
-                  String line, message = new String();
-                  while((line = in.readLine()) != null){
-                    message += line + "\n";
-                  }
-                  System.out.println(message);
-                
-            } else {
-              System.out.println("ERROR: No such command");
-            }
+              } catch (IOException e) {
+                  System.out.println("Error");
+                  System.exit(-1);
+              }
+              String line, message = new String();
+              while((line = in.readLine()) != null){
+                message += line + "\n";
+              }
+              System.out.println(message);
+              
+          } else {
+            System.out.println("ERROR: No such command");
+          }
     	} catch (SocketTimeoutException e) {
     		addresses.remove(placeholder);
     		ports.remove(placeholder);
