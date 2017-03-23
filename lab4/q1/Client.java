@@ -42,7 +42,6 @@ public class Client {
     while (sc.hasNextLine()) {
       tcp = new Socket("localhost", tcpPort);
       out = new PrintWriter(tcp.getOutputStream(), true);
-      udp = new DatagramSocket();
       in = new BufferedReader(new InputStreamReader(tcp.getInputStream()));
       out.flush();
       String cmd = sc.nextLine();
@@ -50,15 +49,7 @@ public class Client {
 
       if (tokens[0].equals("purchase") || tokens[0].equals("cancel") || 
                  tokens[0].equals("search") || tokens[0].equals("list")) {
-          if(mode){
-            byte[] cmdArray = cmd.getBytes();
-            DatagramPacket dp = new DatagramPacket(cmdArray, cmdArray.length, InetAddress.getLocalHost(), udpPort);
-            udp.send(dp);
-            dp = new DatagramPacket(new byte[1024], 1024);
-            udp.receive(dp);
-            System.out.println(new String(dp.getData()));
-          }
-          else{
+          
             out.write(cmd + "\n");
             out.flush();
             String line, message = new String();
@@ -66,7 +57,7 @@ public class Client {
               message += line + "\n";
             }
             System.out.println(message);
-          }
+          
       } else {
         System.out.println("ERROR: No such command");
       }
