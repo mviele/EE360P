@@ -20,7 +20,6 @@ public class Client {
   public static void main(String[] args) throws Exception{
     String hostAddress;
     int tcpPort;
-    int udpPort;
     
     if (args.length != 3) {
       System.out.println("ERROR: Provide 3 arguments");
@@ -58,10 +57,10 @@ public class Client {
             }
             System.out.println(message);
           
-      } else {
+      } 
+      else {
         System.out.println("ERROR: No such command");
       }
     }
   }
-
 }

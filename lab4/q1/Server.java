@@ -1,5 +1,3 @@
-
-
 /*
  * Group EIDs:
  * mtv364
@@ -66,11 +64,10 @@ public class Server {
     
     //open TCP sockets
     try{
-      //TCP
-      ServerSocket listener = new ServerSocket(tcpPort);
-      Socket tcpSocket;
-      
       while(true){
+        //TCP
+        ServerSocket listener = new ServerSocket(tcpPort);
+        Socket tcpSocket;
         if((tcpSocket = listener.accept()) != null){
           //Identify, is it a client or another server?
          /*
@@ -79,6 +76,31 @@ public class Server {
          * Acknowledgement
          * Mutex Request from another server
          */
+
+          String returnString = ""; 
+          InputStreamReader input = new InputStreamReader(tcpSocket.getInputStream());
+          BufferedReader din = new BufferedReader(input); 
+          PrintWriter out = new PrintWriter(tcpSocket.getOutputStream(), true);
+          String command = din.readLine();
+          String[] tokens = command.split(" ");
+          if(tokens[0].equals("purchase") || tokens[0].equals("cancel") || 
+             tokens[0].equals("search") || tokens[0].equals("list")){
+
+              //1. Generate Timestamp and send to all other servers
+              //2. Wait for n - 1 acknowledgements
+              //3. Edit inventory
+              //4. Send release to all other servers
+              //5. Send return message back to client
+          }
+          else if(tokens[0].equals("server")){
+            if(tokens[1].equals("request")){
+              //1. Add request to queue
+              //2. Send back acknowledgement
+            }
+            else if(tokens[1].equals("relase")){
+              //1. Remove given timestamp from queue
+            }
+          }
 
           Thread t = new TCPServerThread(tcpSocket);
           t.start();
@@ -154,19 +176,6 @@ public class Server {
     }
 
     return listString;
-  }
-
-  public synchronized static void udpSend(DatagramPacket packet){
-    try{
-      datasocket.send(packet);
-    }
-    catch(Exception e){
-      e.printStackTrace();
-    }
-  }
-
-  public synchronized static void setMode(boolean bool){
-    mode = bool;
   }
 
 }
