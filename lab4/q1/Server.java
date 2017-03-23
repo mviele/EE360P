@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.PriorityQueue;
 import java.util.Scanner;
 
 public class Server {
@@ -34,6 +35,7 @@ public class Server {
 		
     Scanner s = new Scanner(new File(fileName));
     
+    PriorityQueue<Long> queue = new PriorityQueue<>();
     boolean firstInitialization = true;
     List<String> otherServers = new ArrayList<String>();
     List<String> otherServersPorts = new ArrayList<String>();
@@ -105,7 +107,13 @@ public class Server {
                 servOut.write("server request " + Integer.toString(uniqueID) + Long.toString(timestamp) + "\n");
                 servOut.flush();
               }
+
               //2. Wait for n - 1 acknowledgements
+              int ack = 0;
+              while(ack < numServers - 1){
+
+              }
+              
               //3. Edit inventory
               //4. Send release to all other servers
               //5. Send return message back to client
@@ -113,16 +121,26 @@ public class Server {
           else if(tokens[0].equals("server")){
             if(tokens[1].equals("request")){
               //1. Add request to queue
+              Long stamp = Long.parseLong(tokens[3]);
+              queue.add(stamp);
+
               //2. Send back acknowledgement
+              int otherID = Integer.parseInt(tokens[2]);
+              //TODO: Setup connection with sender and send acknowledgement
             }
             else if(tokens[1].equals("relase")){
               //1. Remove given timestamp from queue
+              Long stamp = Long.parseLong(tokens[2]);
+              Long head = queue.remove();
+              if(stamp != head){
+                throw new Exception("Queue error");
+              }
             }
           }
 
-          Thread t = new TCPServerThread(tcpSocket);
-          t.start();
-          t.join();
+          // Thread t = new TCPServerThread(tcpSocket);
+          // t.start();
+          // t.join();
         }
       }
     } 
