@@ -69,16 +69,21 @@ public class Client {
     PrintWriter out;
     BufferedReader in;
     Scanner sc = new Scanner(System.in);
-    
+    boolean failed = false;
+    String commandToServer = "dummy command";
     while (true){
-    	
+      
         while (sc.hasNextLine()) {
-            String commandToServer = sc.nextLine();
+            if(!failed){ 
+              commandToServer = sc.nextLine();
+            }
+            failed = false;
             int currentServerNumber = 0;
             boolean connected = false;
             boolean timedOut = false;
 
-            while((!connected) && (currentServerNumber < addresses.size())){
+            while(!connected){
+              System.out.println("currentServerNumber: "+Integer.toString(currentServerNumber));
               InetAddress address = addresses.get(currentServerNumber);
               int port = ports.get(currentServerNumber);
               
@@ -86,17 +91,12 @@ public class Client {
               try{
             	  socket.connect(new InetSocketAddress(address, port), 100);
               }
-              catch(SocketTimeoutException e){
+              catch(Exception e){
             	  timedOut = true;
+                failed = true;
                 addresses.remove(currentServerNumber);
                 ports.remove(currentServerNumber);
-                System.out.println("timeout");
-              }
-              catch(ConnectException e){
-                timedOut = true;
-                addresses.remove(currentServerNumber);
-                ports.remove(currentServerNumber);
-                System.out.println("Server crashed");
+                System.out.println("Connection failed initially");
               }
               
               //You connected to a server, so now do your shitttt
@@ -105,6 +105,7 @@ public class Client {
                 String inputFromServer = "";
                 out = new PrintWriter(socket.getOutputStream(), true);
                 in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                System.out.println("Command: "+commandToServer);
                 out.write(commandToServer + "\n");
                 out.flush();
                 socket.setSoTimeout(100);       
@@ -114,22 +115,18 @@ public class Client {
                     inputFromServer += message + "\n";
                   }
                 }
-                catch(SocketTimeoutException e){
+                catch(Exception e){
                   connected = false;
+                  failed = true;
                   addresses.remove(currentServerNumber);
                   ports.remove(currentServerNumber);
-                  System.out.println("timeout2");
-                }
-                catch(ConnectException e){
-                  timedOut = true;
-                  addresses.remove(currentServerNumber);
-                  ports.remove(currentServerNumber);
-                  System.out.println("Server crashed");
+                  System.out.println("Connection failed receiving response");
                 }
                 if(connected){
                   System.out.println(inputFromServer);
                 }
               }
+              timedOut = false;
               // Else, re-enter while loop
             	
               if(addresses.size() == 0){

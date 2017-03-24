@@ -72,7 +72,6 @@ public class Server {
     File inventoryFile = new File(fileName);
     Inventory inventory = Inventory.getInstance(inventoryFile);
     
-    System.out.println("inventory initialized");
     //open TCP sockets
     try{
       ServerSocket listener = new ServerSocket(otherServersPorts.get(uniqueID - 1));
@@ -88,20 +87,22 @@ public class Server {
           * Mutex Request from another server
           * Mutex Release
           */
-
+          System.out.println(queue.toString());
+          System.out.println(tcpSocket.toString());
           String returnString = ""; 
           InputStreamReader input = new InputStreamReader(tcpSocket.getInputStream());
           BufferedReader din = new BufferedReader(input); 
           PrintWriter out = new PrintWriter(tcpSocket.getOutputStream(), true);
           String command = din.readLine();
           String[] tokens = command.split(" ");
+          System.out.println("Received Command: "+command);
           if(tokens[0].equals("purchase") || tokens[0].equals("cancel") || 
              tokens[0].equals("search") || tokens[0].equals("list")){
 
-              System.out.println("Received Command");
               //1. Generate Timestamp and send to all other servers
               long timestamp = System.currentTimeMillis();
               queue.add(timestamp);
+              System.out.println("Timestamp: "+Long.toString(timestamp));
               for(int i = 0; i < otherServers.size(); i++){
                 if(i == uniqueID - 1) continue;
                 if(ignoreSet.contains(i)) continue;
@@ -111,7 +112,7 @@ public class Server {
                 try{
                   otherServer.connect(new InetSocketAddress(otherServers.get(i), otherServersPorts.get(i)), 100);
                 }
-                catch(SocketTimeoutException e){
+                catch(Exception e){
                   ignoreSet.add(i);
                   otherServer.close();
                   numServers--;
@@ -204,7 +205,7 @@ public class Server {
 
               //4. Send release to all other servers
               for(int i = 0; i < otherServers.size(); i++){
-                if(i == uniqueID) continue;
+                if(i == uniqueID - 1) continue;
                 if(ignoreSet.contains(i)) continue;
 
                 //1. Make Socket to connect to servers
@@ -212,7 +213,7 @@ public class Server {
                 try{
                   otherServer.connect(new InetSocketAddress(otherServers.get(i), otherServersPorts.get(i)), 100);
                 }
-                catch(SocketTimeoutException e){
+                catch(Exception e){
                   ignoreSet.add(i);
                   otherServer.close();
                   numServers--;
@@ -222,12 +223,13 @@ public class Server {
                 BufferedReader servIn = new BufferedReader(new InputStreamReader(otherServer.getInputStream()));
 
                 //2. Send Message of the form "server request <myServerID> <timestamp>"
-                servOut.write("server release" + Long.toString(timestamp) +"\n");
+                servOut.write("server release " + Long.toString(timestamp) +"\n");
                 servOut.flush();
                 otherServer.close();
               }
 
               Long head = queue.remove();
+              System.out.println("Head: "+Long.toString(head));
               if(timestamp != head){
                 System.out.println("Queue error");
                 System.exit(-1);
@@ -254,8 +256,10 @@ public class Server {
             }
             else if(tokens[1].equals("release")){
               //1. Remove given timestamp from queue
-              Long stamp = Long.parseLong(tokens[2]);
-              Long head = queue.remove();
+              long stamp = Long.parseLong(tokens[2]);
+              System.out.println("Remove request: "+Long.toString(stamp));
+              long head = queue.remove();
+              System.out.println("Head: "+Long.toString(head));
               tcpSocket.close();
               if(stamp != head){
                 throw new Exception("Queue error");
