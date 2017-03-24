@@ -28,6 +28,11 @@ import java.util.Set;
 
 public class Server {
   
+  private static Map<String, Integer> inventoryMap;
+  private static List<Order> orderList;
+  private static int nextOrderID;
+  private static boolean init = false;
+
   public static void main (String[] args) throws Exception {
     
     if (args.length != 1) {
@@ -70,7 +75,7 @@ public class Server {
     
     //change filename to Java File & pass to inventory class
     File inventoryFile = new File(fileName);
-    Inventory inventory = Inventory.getInstance(inventoryFile);
+    Server.initialize(inventoryFile);
     
     //open TCP sockets
     try{
@@ -167,6 +172,14 @@ public class Server {
                       if(stamp != head){
                         throw new Exception("Queue error");
                       }
+                      if(comTokens.length > 3){
+                        if(comTokens.length == 4){
+                          Server.cancel(Integer.parseInt(comTokens[3]));
+                        }
+                        else{
+                          Server.purchase(comTokens[3], comTokens[4], Integer.parseInt(comTokens[5]));
+                        }
+                      }
                     }
                   }
                   sock.close();
@@ -177,25 +190,25 @@ public class Server {
               
               //3. Edit inventory
               if(tokens[0].equals("purchase")){
-                returnString = inventory.purchase(tokens[1], tokens[2], Integer.parseInt(tokens[3]));
+                returnString = Server.purchase(tokens[1], tokens[2], Integer.parseInt(tokens[3]));
                 out.write(returnString + "\n");
                 out.flush();
                 tcpSocket.close();
               }
               else if(tokens[0].equals("cancel")){
-                returnString = inventory.cancel(Integer.parseInt(tokens[1]));
+                returnString = Server.cancel(Integer.parseInt(tokens[1]));
                 out.write(returnString + "\n");
                 out.flush();
                 tcpSocket.close();
               } 
               else if(tokens[0].equals("search")){
-                returnString = inventory.search(tokens[1]);
+                returnString = Server.search(tokens[1]);
                 out.write(returnString + "\n");
                 out.flush();
                 tcpSocket.close();
               } 
               else if(tokens[0].equals("list")){
-                returnString = inventory.list();
+                returnString = Server.list();
                 out.write(returnString + "\n");
                 out.flush();
                 tcpSocket.close();
@@ -223,7 +236,14 @@ public class Server {
                 BufferedReader servIn = new BufferedReader(new InputStreamReader(otherServer.getInputStream()));
 
                 //2. Send Message of the form "server request <myServerID> <timestamp>"
-                servOut.write("server release " + Long.toString(timestamp) +"\n");
+                String releaseMsg = "server release " + Long.toString(timestamp);
+                if(tokens[0].equals("purchase") || tokens[0].equals("cancel")){
+                  for(int k = 1; k < tokens.length; k++){
+                    releaseMsg += " " + tokens[k];
+                  }
+                }
+                
+                servOut.write(releaseMsg +"\n");
                 servOut.flush();
                 otherServer.close();
               }
@@ -264,6 +284,14 @@ public class Server {
               if(stamp != head){
                 throw new Exception("Queue error");
               }
+              if(tokens.length > 3){
+                if(tokens.length == 4){
+                  Server.cancel(Integer.parseInt(tokens[3]));
+                }
+                else{
+                  Server.purchase(tokens[3], tokens[4], Integer.parseInt(tokens[5]));
+                }
+              }
             }
           }
           else{
@@ -277,4 +305,97 @@ public class Server {
     	System.err.println("Server dead: " + e);
     } 
   }
+
+  public static void initialize(File file){
+        if(init) return;
+        inventoryMap = new HashMap<>();
+        try{
+            Scanner s = new Scanner(file);
+            orderList = new ArrayList<>();
+            nextOrderID = 1;
+            
+            // parse the inventory file
+            while(s.hasNext()){
+                int k;
+                String cur = s.next();		
+                if(s.hasNextInt()){
+                    k = s.nextInt();
+                }
+                else{
+                    throw new Exception("ERROR: Invalid input file");
+                }
+                inventoryMap.put(cur, k);
+            } 
+            s.close();
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }
+        init = true;
+    }
+
+  public static String purchase(String username, String productName, int quantity){
+      if(inventoryMap.containsKey(productName)){
+          if(inventoryMap.get(productName) >= quantity){
+              //Subtract inventory
+              inventoryMap.put(productName, inventoryMap.get(productName) - quantity);
+
+              //Add order to orderList
+              Order order = new Order(nextOrderID++, username, productName, quantity);
+              orderList.add(order);
+
+              //Successful purchase message
+              return "You order has been placed, " + order.toString();
+          }
+
+          //Insufficient quantity message
+          return "Not Available - Not enough items";
+      }
+      else{
+      //No such product message
+      return "Not Available - We do not sell this product";
+      }
+      
+    }
+
+  public static String cancel(int orderID){
+    for(Order order: orderList){
+        if(order.getOrderID() == orderID){
+            //Add inventory back
+            String product = order.getProductName();
+            inventoryMap.put(product, order.getQuantity() + inventoryMap.get(product));
+
+            //Remove order from order list
+            orderList.remove(order);
+
+            //Successful cancellation message
+            return "Order " + Integer.toString(orderID) + " is canceled"; 
+        }
+    }
+
+    //No such order message
+    return Integer.toString(orderID) + " not found, no such order";
+  }
+
+  public static String search(String username){
+    String searchResult = new String();
+    for(Order order: orderList){
+      if(order.getUsername().equals(username)){
+        searchResult += Integer.toString(order.getOrderID()) + ", " + 
+          order.getProductName() + ", " + Integer.toString(order.getQuantity()) + "\n";
+      }
+    }
+
+    return searchResult.length() != 0 ? searchResult : "No order found for " + username; 
+  }
+
+  public static String list(){
+    String listString = new String();
+    for(String s: inventoryMap.keySet()){
+      listString += s + " " + Integer.toString(inventoryMap.get(s)) + "\n";
+    }
+    
+    return listString;
+  }
 }
+
