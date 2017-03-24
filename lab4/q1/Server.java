@@ -13,14 +13,18 @@ import java.io.PrintWriter;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Scanner;
+import java.util.Set;
 
 public class Server {
   
@@ -40,6 +44,7 @@ public class Server {
     boolean firstInitialization = true;
     List<String> otherServers = new ArrayList<>();
     List<Integer> otherServersPorts = new ArrayList<>();
+    Set<Integer> ignoreSet = new HashSet<>();
     int uniqueID = -1;
     int numServers = -1;
       
@@ -67,11 +72,13 @@ public class Server {
     File inventoryFile = new File(fileName);
     Inventory inventory = Inventory.getInstance(inventoryFile);
     
+    System.out.println("inventory initialized");
     //open TCP sockets
     try{
+      ServerSocket listener = new ServerSocket(otherServersPorts.get(uniqueID - 1));
       while(true){
         //TCP
-        ServerSocket listener = new ServerSocket(otherServersPorts.get(uniqueID - 1));
+        System.out.println(otherServersPorts.get(uniqueID - 1));
         Socket tcpSocket;
         if((tcpSocket = listener.accept()) != null){
          /*
@@ -91,27 +98,42 @@ public class Server {
           if(tokens[0].equals("purchase") || tokens[0].equals("cancel") || 
              tokens[0].equals("search") || tokens[0].equals("list")){
 
+              System.out.println("Received Command");
               //1. Generate Timestamp and send to all other servers
               long timestamp = System.currentTimeMillis();
+              queue.add(timestamp);
               for(int i = 0; i < otherServers.size(); i++){
                 if(i == uniqueID - 1) continue;
+                if(ignoreSet.contains(i)) continue;
 
                 //1. Make Socket to connect to servers
-                Socket otherServer = new Socket(otherServers.get(i), otherServersPorts.get(i));
+                Socket otherServer = new Socket();
+                try{
+                  otherServer.connect(new InetSocketAddress(otherServers.get(i), otherServersPorts.get(i)), 100);
+                }
+                catch(SocketTimeoutException e){
+                  ignoreSet.add(i);
+                  otherServer.close();
+                  numServers--;
+                  continue;
+                }
                 PrintWriter servOut = new PrintWriter(otherServer.getOutputStream(), true);
                 BufferedReader servIn = new BufferedReader(new InputStreamReader(otherServer.getInputStream()));
 
                 //2. Send Message of the form "server request <myServerID> <timestamp>"
-                servOut.write("server request " + Integer.toString(uniqueID) + Long.toString(timestamp) + "\n");
+                servOut.write("server request " + Integer.toString(uniqueID) + " " + Long.toString(timestamp) + "\n");
                 servOut.flush();
                 otherServer.close();
               }
+
+              System.out.println("Alerted other servers");
 
               //2. Wait for n - 1 acknowledgements
               int ack = 0;
               while(ack < numServers - 1 && queue.peek() != timestamp){
                 Socket sock;
                 if((sock = listener.accept()) != null){
+                  System.out.println("Connected to other server, while waiting for acknowledge");
                   InputStreamReader inStream = new InputStreamReader(sock.getInputStream());
                   BufferedReader inReader = new BufferedReader(input); 
                   PrintWriter outWriter = new PrintWriter(sock.getOutputStream(), true);
@@ -130,7 +152,7 @@ public class Server {
                       //2. Send back acknowledgement
                       int otherID = Integer.parseInt(tokens[2]);
                       
-                      Socket otherServer = new Socket(otherServers.get(otherID), otherServersPorts.get(otherID));
+                      Socket otherServer = new Socket(otherServers.get(otherID - 1), otherServersPorts.get(otherID - 1));
                       PrintWriter servOut = new PrintWriter(otherServer.getOutputStream(), true);
                       BufferedReader servIn = new BufferedReader(new InputStreamReader(otherServer.getInputStream()));
 
@@ -149,6 +171,8 @@ public class Server {
                   sock.close();
                 }   
               }
+
+              System.out.println("Received acknowledgements");
               
               //3. Edit inventory
               if(tokens[0].equals("purchase")){
@@ -176,13 +200,24 @@ public class Server {
                 tcpSocket.close();
               }
 
+              System.out.println("Inventory access complete");
 
               //4. Send release to all other servers
               for(int i = 0; i < otherServers.size(); i++){
                 if(i == uniqueID) continue;
+                if(ignoreSet.contains(i)) continue;
 
                 //1. Make Socket to connect to servers
-                Socket otherServer = new Socket(otherServers.get(i), otherServersPorts.get(i));
+                Socket otherServer = new Socket();
+                try{
+                  otherServer.connect(new InetSocketAddress(otherServers.get(i), otherServersPorts.get(i)), 100);
+                }
+                catch(SocketTimeoutException e){
+                  ignoreSet.add(i);
+                  otherServer.close();
+                  numServers--;
+                  continue;
+                }
                 PrintWriter servOut = new PrintWriter(otherServer.getOutputStream(), true);
                 BufferedReader servIn = new BufferedReader(new InputStreamReader(otherServer.getInputStream()));
 
@@ -191,8 +226,17 @@ public class Server {
                 servOut.flush();
                 otherServer.close();
               }
+
+              Long head = queue.remove();
+              if(timestamp != head){
+                System.out.println("Queue error");
+                System.exit(-1);
+              }
+
+              System.out.println("Mutex released");
           }
           else if(tokens[0].equals("server")){
+            System.out.println("Inter-server communication detected");
             if(tokens[1].equals("request")){
               //1. Add request to queue
               Long stamp = Long.parseLong(tokens[3]);
@@ -200,7 +244,7 @@ public class Server {
 
               //2. Send back acknowledgement
               int otherID = Integer.parseInt(tokens[2]);
-              Socket otherServer = new Socket(otherServers.get(otherID), otherServersPorts.get(otherID));
+              Socket otherServer = new Socket(otherServers.get(otherID - 1), otherServersPorts.get(otherID - 1));
               PrintWriter servOut = new PrintWriter(otherServer.getOutputStream(), true);
               BufferedReader servIn = new BufferedReader(new InputStreamReader(otherServer.getInputStream()));
 

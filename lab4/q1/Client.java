@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.ConnectException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -77,7 +78,7 @@ public class Client {
             boolean connected = false;
             boolean timedOut = false;
 
-            while((!connected) || (currentServerNumber < addresses.size())){
+            while((!connected) && (currentServerNumber < addresses.size())){
               InetAddress address = addresses.get(currentServerNumber);
               int port = ports.get(currentServerNumber);
               
@@ -87,29 +88,56 @@ public class Client {
               }
               catch(SocketTimeoutException e){
             	  timedOut = true;
+                addresses.remove(currentServerNumber);
+                ports.remove(currentServerNumber);
+                System.out.println("timeout");
+              }
+              catch(ConnectException e){
+                timedOut = true;
+                addresses.remove(currentServerNumber);
+                ports.remove(currentServerNumber);
+                System.out.println("Server crashed");
               }
               
               //You connected to a server, so now do your shitttt
               if (!timedOut){
-            	connected = true;
-            	String inputFromServer = null;
-            	out = new PrintWriter(socket.getOutputStream(), true);
-            	in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            	out.write(commandToServer);
-            	out.flush();
-            	socket.setSoTimeout(100);       
-            	try{
-            	inputFromServer = in.readLine();
-            	}
-            	catch(SocketTimeoutException e){
-            		connected = false;
-            	}
-            	if(connected){
-            		System.out.println(inputFromServer);
-            	}
+                connected = true;
+                String inputFromServer = "";
+                out = new PrintWriter(socket.getOutputStream(), true);
+                in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                out.write(commandToServer + "\n");
+                out.flush();
+                socket.setSoTimeout(100);       
+                try{
+                  String message = "";
+                  while((message = in.readLine()) != null){
+                    inputFromServer += message + "\n";
+                  }
+                }
+                catch(SocketTimeoutException e){
+                  connected = false;
+                  addresses.remove(currentServerNumber);
+                  ports.remove(currentServerNumber);
+                  System.out.println("timeout2");
+                }
+                catch(ConnectException e){
+                  timedOut = true;
+                  addresses.remove(currentServerNumber);
+                  ports.remove(currentServerNumber);
+                  System.out.println("Server crashed");
+                }
+                if(connected){
+                  System.out.println(inputFromServer);
+                }
               }
               // Else, re-enter while loop
-            	currentServerNumber++;
+            	
+              if(addresses.size() == 0){
+                System.out.println("All servers dead, rip");
+                System.exit(-1);
+              }
+              currentServerNumber = (currentServerNumber + 1) % addresses.size();
+              socket.close();
             }
           
            
@@ -117,8 +145,4 @@ public class Client {
        
     }
   }
-}
-    
-
-
 }
