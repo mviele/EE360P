@@ -5,7 +5,7 @@ import java.util.Scanner;
 
 public abstract class RandomElector {
 
-    private int processID;
+    private int processID; //processID must be positive or zero
     private int electionID;
     private boolean awake;
     private int leaderID; //The processID of the leader
@@ -21,37 +21,47 @@ public abstract class RandomElector {
 
     public RandomElector(File file){
 
-        awake = false;
+        this.awake = false;
+        this.leaderID = -1;
 
         Random random = new Random();
-        electionID = random.nextInt(Integer.MAX_VALUE); //between 0 and 2^31 - 1
+        this.electionID = random.nextInt(Integer.MAX_VALUE); //between 0 and 2^31 - 1
 
-        Scanner s = new Scanner(file);
+        try{
+            Scanner s = new Scanner(file);
 
-        String cmd = s.nextLine();
-        processID = Integer.parseInt(cmd);
+            String cmd = s.nextLine();
+            this.processID = Integer.parseInt(cmd);
 
-        cmd = s.nextLine();
-        String[] tokens = cmd.split(":");
-        myAddress = tokens[0];
-        myPort = Integer.parseInt(tokens[1]);
+            cmd = s.nextLine();
+            String[] tokens = cmd.split(":");
+            this.myAddress = tokens[0];
+            this.myPort = Integer.parseInt(tokens[1]);
 
-        cmd = s.nextLine();
-        tokens = cmd.split(":");
-        leftAddress = tokens[0];
-        leftPort = Integer.parseInt(tokens[1]);
+            cmd = s.nextLine();
+            tokens = cmd.split(":");
+            this.leftAddress = tokens[0];
+            this.leftPort = Integer.parseInt(tokens[1]);
 
-        s.close();
+            s.close();
+        }
+        catch(Exception e){
+            System.out.println(e);
+            e.printStackTrace();
+        }
 
     }
 
     public void initiateElection(){
+
+        if(this.awake) return;
+
         String message = "election " + Integer.toString(this.electionID) + " " + Integer.toString(this.processID);
         this.send(message);
         this.awake = true;
     }
 
-    public void handleElectionMessage(String message){
+    public void handleElectionMessage(String message) throws Exception{
 
         String[] tokens = message.split(" ");
         if(!tokens[0].equals("election")){
@@ -82,7 +92,7 @@ public abstract class RandomElector {
         this.awake = true;
     }
 
-    public void handleLeaderMessage(String message){
+    public void handleLeaderMessage(String message) throws Exception{
         
         String[] tokens = message.split(" ");
         if(!tokens[0].equals("leader")){
@@ -101,7 +111,47 @@ public abstract class RandomElector {
 
     }
 
-    public void send(String message);
+    public int getProcessID() {
+		return processID;
+	}
+
+	public int getElectionID() {
+		return electionID;
+	}
+
+	public boolean isAwake() {
+		return awake;
+	}
+
+	public int getLeaderID() {
+		return leaderID;
+	}
+
+	public String getMyAddress() {
+		return myAddress;
+	}
+
+	public int getMyPort() {
+		return myPort;
+	}
+
+	public String getLeftAddress() {
+		return leftAddress;
+	}
+
+	public int getLeftPort() {
+		return leftPort;
+	}
+
+	public String getLeaderAddress() {
+		return leaderAddress;
+	}
+
+	public int getLeaderPort() {
+		return leaderPort;
+	}
+
+    public abstract void send(String message);
 
     /**
      * For the future:
