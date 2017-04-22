@@ -52,14 +52,13 @@ public class Process extends RandomElector{
             Scanner s = new Scanner(System.in);
             while(true){
 
-                System.out.println("creating socket");
                 Socket tcpSocket;
                 if((tcpSocket = listener.accept()) != null){
 
                     InputStreamReader input = new InputStreamReader(tcpSocket.getInputStream());
                     BufferedReader din = new BufferedReader(input);
                     String message = din.readLine();
-                    System.out.println(message);
+                    System.out.println("Received message: " + message);
                     String[] tokens = message.split(" ");
                     if(tokens[0].equals("election")){
                         p.handleElectionMessage(message);
