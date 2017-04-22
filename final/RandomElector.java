@@ -19,13 +19,16 @@ public abstract class RandomElector {
     private String leaderAddress;
     private int leaderPort;
 
+    private static int MAX_ELECTION_ID = 100;
+
     public RandomElector(File file){
 
         this.awake = false;
         this.leaderID = -1;
 
         Random random = new Random();
-        this.electionID = random.nextInt(Integer.MAX_VALUE); //between 0 and 2^31 - 1
+        this.electionID = random.nextInt(this.MAX_ELECTION_ID); //between 0 and 2^31 - 1
+        System.out.println("My Election ID: " + Integer.toString(this.electionID));
 
         try{
             Scanner s = new Scanner(file);
@@ -84,7 +87,7 @@ public abstract class RandomElector {
             String myMessage = "leader " + Integer.toString(this.processID) + " " + this.myAddress + ":" + Integer.toString(this.myPort);
             this.send(myMessage);
         }
-        else if(otherElectionID < this.electionID && !awake){
+        else if(otherElectionID > this.electionID && !awake){
             String myMessage = "election " + Integer.toString(this.electionID) + " " + Integer.toString(this.processID);
             this.send(myMessage);
         }

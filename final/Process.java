@@ -9,6 +9,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.Scanner;
+import java.util.concurrent.TimeUnit;
 
 public class Process extends RandomElector{
 
@@ -38,29 +39,27 @@ public class Process extends RandomElector{
     }
 
     public static void main(String[] args){
-        
+
         try{
             File file = new File(args[0]);
             Process p = new Process(file);
 
             ServerSocket listener = new ServerSocket(p.getMyPort());
+            if(args.length > 1 && args[1].equals("init")){
+                p.initiateElection();
+            }
 
             Scanner s = new Scanner(System.in);
             while(true){
 
-                while(s.hasNextLine()){
-                    String str = s.nextLine();
-                    if(str.equals("init")){
-                        p.initiateElection();
-                    }
-                }
-
+                System.out.println("creating socket");
                 Socket tcpSocket;
                 if((tcpSocket = listener.accept()) != null){
 
                     InputStreamReader input = new InputStreamReader(tcpSocket.getInputStream());
                     BufferedReader din = new BufferedReader(input);
                     String message = din.readLine();
+                    System.out.println(message);
                     String[] tokens = message.split(" ");
                     if(tokens[0].equals("election")){
                         p.handleElectionMessage(message);
