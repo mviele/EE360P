@@ -82,7 +82,6 @@ public class Server {
       ServerSocket listener = new ServerSocket(otherServersPorts.get(uniqueID - 1));
       while(true){
         //TCP
-        System.out.println(otherServersPorts.get(uniqueID - 1));
         Socket tcpSocket;
         if((tcpSocket = listener.accept()) != null){
          /*
@@ -92,22 +91,18 @@ public class Server {
           * Mutex Request from another server
           * Mutex Release
           */
-          System.out.println(queue.toString());
-          System.out.println(tcpSocket.toString());
           String returnString = ""; 
           InputStreamReader input = new InputStreamReader(tcpSocket.getInputStream());
           BufferedReader din = new BufferedReader(input); 
           PrintWriter out = new PrintWriter(tcpSocket.getOutputStream(), true);
           String command = din.readLine();
           String[] tokens = command.split(" ");
-          System.out.println("Received Command: "+command);
           if(tokens[0].equals("purchase") || tokens[0].equals("cancel") || 
              tokens[0].equals("search") || tokens[0].equals("list")){
 
               //1. Generate Timestamp and send to all other servers
               long timestamp = System.currentTimeMillis();
               queue.add(timestamp);
-              System.out.println("Timestamp: "+Long.toString(timestamp));
               for(int i = 0; i < otherServers.size(); i++){
                 if(i == uniqueID - 1) continue;
                 if(ignoreSet.contains(i)) continue;
@@ -132,14 +127,11 @@ public class Server {
                 otherServer.close();
               }
 
-              System.out.println("Alerted other servers");
-
               //2. Wait for n - 1 acknowledgements
               int ack = 0;
               while(ack < numServers - 1 && queue.peek() != timestamp){
                 Socket sock;
                 if((sock = listener.accept()) != null){
-                  System.out.println("Connected to other server, while waiting for acknowledge");
                   InputStreamReader inStream = new InputStreamReader(sock.getInputStream());
                   BufferedReader inReader = new BufferedReader(input); 
                   PrintWriter outWriter = new PrintWriter(sock.getOutputStream(), true);
@@ -185,8 +177,6 @@ public class Server {
                   sock.close();
                 }   
               }
-
-              System.out.println("Received acknowledgements");
               
               //3. Edit inventory
               if(tokens[0].equals("purchase")){
@@ -214,7 +204,6 @@ public class Server {
                 tcpSocket.close();
               }
 
-              System.out.println("Inventory access complete");
 
               //4. Send release to all other servers
               for(int i = 0; i < otherServers.size(); i++){
@@ -249,16 +238,13 @@ public class Server {
               }
 
               Long head = queue.remove();
-              System.out.println("Head: "+Long.toString(head));
               if(timestamp != head){
                 System.out.println("Queue error");
                 System.exit(-1);
               }
 
-              System.out.println("Mutex released");
           }
           else if(tokens[0].equals("server")){
-            System.out.println("Inter-server communication detected");
             if(tokens[1].equals("request")){
               //1. Add request to queue
               Long stamp = Long.parseLong(tokens[3]);
@@ -277,9 +263,7 @@ public class Server {
             else if(tokens[1].equals("release")){
               //1. Remove given timestamp from queue
               long stamp = Long.parseLong(tokens[2]);
-              System.out.println("Remove request: "+Long.toString(stamp));
               long head = queue.remove();
-              System.out.println("Head: "+Long.toString(head));
               tcpSocket.close();
               if(stamp != head){
                 throw new Exception("Queue error");

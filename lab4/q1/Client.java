@@ -83,7 +83,6 @@ public class Client {
             boolean timedOut = false;
 
             while(!connected){
-              System.out.println("currentServerNumber: "+Integer.toString(currentServerNumber));
               InetAddress address = addresses.get(currentServerNumber);
               int port = ports.get(currentServerNumber);
               
@@ -96,7 +95,6 @@ public class Client {
                 failed = true;
                 addresses.remove(currentServerNumber);
                 ports.remove(currentServerNumber);
-                System.out.println("Connection failed initially");
               }
               
               //You connected to a server, so now do your shitttt
@@ -105,7 +103,6 @@ public class Client {
                 String inputFromServer = "";
                 out = new PrintWriter(socket.getOutputStream(), true);
                 in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                System.out.println("Command: "+commandToServer);
                 out.write(commandToServer + "\n");
                 out.flush();
                 socket.setSoTimeout(100);       
@@ -120,7 +117,6 @@ public class Client {
                   failed = true;
                   addresses.remove(currentServerNumber);
                   ports.remove(currentServerNumber);
-                  System.out.println("Connection failed receiving response");
                 }
                 if(connected){
                   System.out.println(inputFromServer);
@@ -130,7 +126,7 @@ public class Client {
               // Else, re-enter while loop
             	
               if(addresses.size() == 0){
-                System.out.println("All servers dead, rip");
+                System.out.println("Server currently unavailable, exiting");
                 System.exit(-1);
               }
               currentServerNumber = (currentServerNumber + 1) % addresses.size();
